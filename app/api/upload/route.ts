@@ -1,9 +1,42 @@
+import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
 type GoogleTokenResponse = { access_token?: string; error?: string; error_description?: string };
+const GOOGLE_ENV_KEYS = ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "GOOGLE_REFRESH_TOKEN", "GOOGLE_DRIVE_FOLDER_ID"] as const;
+
+async function getRuntimeEnvironment() {
+  let cloudflareEnv: Record<string, unknown> = {};
+  let cloudflareContextError = "";
+  try {
+    const context = await getCloudflareContext({ async: true });
+    cloudflareEnv = context.env as unknown as Record<string, unknown>;
+  } catch (error) {
+    cloudflareContextError = error instanceof Error ? error.message : "unknown error";
+  }
+
+  const diagnostics = Object.fromEntries(GOOGLE_ENV_KEYS.map((key) => [key, {
+    processEnv: Boolean(process.env[key]),
+    cloudflareEnv: Boolean(cloudflareEnv[key]),
+  }]));
+  console.log("[upload-debug] environment presence", {
+    runtime: process.env.NEXT_RUNTIME || "unknown",
+    diagnostics,
+    cloudflareContextError: cloudflareContextError || undefined,
+  });
+
+  return {
+    get(key: (typeof GOOGLE_ENV_KEYS)[number]) {
+      const processValue = process.env[key];
+      if (processValue) return processValue;
+      const cloudflareValue = cloudflareEnv[key];
+      return typeof cloudflareValue === "string" ? cloudflareValue : undefined;
+    },
+    diagnostics,
+  };
+}
 
 async function getGoogleAccessToken(clientId: string, clientSecret: string, refreshToken: string) {
   const response = await fetch("https://oauth2.googleapis.com/token", {
@@ -21,12 +54,17 @@ async function getGoogleAccessToken(clientId: string, clientSecret: string, refr
 }
 
 export async function POST(request: Request) {
-  const clientId = process.env.GOOGLE_CLIENT_ID;
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  const refreshToken = process.env.GOOGLE_REFRESH_TOKEN;
-  const folderId = process.env.GOOGLE_DRIVE_FOLDER_ID;
+  const runtimeEnvironment = await getRuntimeEnvironment();
+  const clientId = runtimeEnvironment.get("GOOGLE_CLIENT_ID");
+  const clientSecret = runtimeEnvironment.get("GOOGLE_CLIENT_SECRET");
+  const refreshToken = runtimeEnvironment.get("GOOGLE_REFRESH_TOKEN");
+  const folderId = runtimeEnvironment.get("GOOGLE_DRIVE_FOLDER_ID");
 
-  if (!clientId || !clientSecret || !refreshToken || !folderId) return NextResponse.json({ error: "Google Driveの接続設定がまだ完了していません。" }, { status: 500 });
+  if (!clientId || !clientSecret || !refreshToken || !folderId) {
+    const missing = GOOGLE_ENV_KEYS.filter((key) => !runtimeEnvironment.get(key));
+    console.error("[upload-debug] missing Google Drive environment variables", { missing, diagnostics: runtimeEnvironment.diagnostics });
+    return NextResponse.json({ error: "Google Driveの接続設定がまだ完了していません。", debug: { missing } }, { status: 500 });
+  }
   if (!request.body) return NextResponse.json({ error: "ファイルが見つかりません。" }, { status: 400 });
 
   const encodedName = request.headers.get("x-file-name");
