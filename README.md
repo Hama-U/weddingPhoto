@@ -41,6 +41,32 @@ OAuth同意画面が「テスト」のままだと、Googleの仕様でリフレ
 
 `GOOGLE_CLIENT_SECRET` と `GOOGLE_REFRESH_TOKEN` は公開リポジトリやブラウザ側の環境変数に置かないでください。Vercelなどにデプロイする場合は、プロジェクトのサーバー側環境変数として登録します。
 
+## Cloudflare Workersへデプロイ
+
+このプロジェクトはCloudflare Pagesの静的サイトではなく、Next.jsのRoute Handler（`/api/upload`）を使うため、Cloudflare Workers + OpenNextでデプロイします。別プロジェクトの`wrangler.toml`をコピーせず、リポジトリ内の`wrangler.jsonc`とOpenNext設定を使用してください。
+
+Cloudflare WorkersのBuild設定は以下にします。
+
+```text
+Build command: npx @opennextjs/cloudflare build
+Deploy command: npx @opennextjs/cloudflare deploy
+```
+
+CloudflareダッシュボードのWorkersプロジェクトで、Build Variables and secretsに次の4つを登録します。値はローカルの`.env.local`と同じです。
+
+```text
+GOOGLE_CLIENT_ID        通常の変数
+GOOGLE_CLIENT_SECRET    Secret
+GOOGLE_REFRESH_TOKEN    Secret
+GOOGLE_DRIVE_FOLDER_ID  通常の変数
+```
+
+Cloudflare WorkersのSecretsは暗号化された環境変数として実行時に参照できます。[Cloudflare公式ドキュメント](https://developers.cloudflare.com/workers/configuration/secrets/)
+
+### 大きな動画について
+
+Cloudflare WorkersのFree/Proプランでは、1回のリクエスト本文が最大100MBです。そのため、100MBを超えるスマホ動画は現在の`/api/upload`経由ではアップロードできません。100MBを超える動画も受け付ける場合は、Google Driveの再開可能アップロードURLをブラウザへ渡し、Cloudflareを経由せず直接Google Driveへ送る方式へ変更する必要があります。[Cloudflareのリクエスト上限](https://developers.cloudflare.com/workers/platform/limits/)
+
 ### `unauthorized_client`
 
 このエラーは、`GOOGLE_REFRESH_TOKEN`を取得したOAuthクライアントと、`.env.local`の`GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`が別の組み合わせになっている場合に発生します。
