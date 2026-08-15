@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "みんなのウェディングフォト",
-  description: "結婚式で撮った写真や動画を新郎新婦へ送るページ",
+  title: "Yuki & Akari Wedding Photo Share",
+  description: "みなさんがとった写真を新郎新婦にも見せてください！！",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
