@@ -58,21 +58,21 @@ export default function PhotoUploader() {
     <main className="page-shell">
       <section className="hero">
         <p className="eyebrow">WEDDING PHOTO SHARE</p>
-        <h1>みんなの写真を、<br /><em>ひとつのアルバムに。</em></h1>
-        <p className="intro">今日の思い出をシェアしよう。<br />あなたが撮った写真をアップロードしてください。</p>
+        <h1>今日の写真を<br /><em>新郎新婦へ</em></h1>
+        <p className="intro">みんなが撮ってくれた写真を、ふたりは楽しみにしています。</p>
       </section>
 
       <section className="upload-card" aria-label="写真アップロード">
         <button className="dropzone" type="button" onClick={() => inputRef.current?.click()}>
           <span className="camera" aria-hidden="true">✦</span>
-          <strong>写真を選ぶ</strong>
-          <span>タップして写真を追加（複数選択OK）</span>
+          <strong>写真・動画を選ぶ</strong>
+          <span>タップしてファイルを追加（複数選択OK）</span>
         </button>
         <input ref={inputRef} type="file" accept="image/*,video/*" multiple onChange={chooseFiles} hidden />
 
         {photos.length > 0 && (
           <div className="photo-section">
-            <div className="section-heading"><span>選択した写真</span><small>{photos.length}枚</small></div>
+            <div className="section-heading"><span>送るファイル</span><small>{photos.length}個</small></div>
             <div className="photo-grid">
               {photos.map((photo) => (
                 <div className="photo-tile" key={photo.id}>
@@ -84,12 +84,13 @@ export default function PhotoUploader() {
           </div>
         )}
 
+        <p className="upload-note">※一度にたくさん送ると回線が混み合うため、少しずつ送ってください。</p>
         <button className="upload-button" type="button" disabled={!photos.length || isUploading} onClick={upload}>
-          {isUploading ? "アップロード中…" : "写真をアップロード"}<span>→</span>
+          {isUploading ? "アップロード中…" : "アップロード"}
         </button>
         {message && <p className="message" role="status">{message}</p>}
       </section>
-      <p className="footer-note">写真は大切に保管されます。みんなで素敵な一日を残そう。</p>
+      <footer className="footer">© Yuki &amp; Akari</footer>
     </main>
   );
 }

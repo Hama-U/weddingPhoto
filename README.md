@@ -52,7 +52,13 @@ Build command: npx @opennextjs/cloudflare build
 Deploy command: npx @opennextjs/cloudflare deploy
 ```
 
-CloudflareダッシュボードのWorkersプロジェクトで、Build Variables and secretsに次の4つを登録します。値はローカルの`.env.local`と同じです。
+CloudflareダッシュボードのWorkersプロジェクトで、ビルド設定ではなく、デプロイ済みWorkerの実行時設定にも次の4つを登録します。値はローカルの`.env.local`と同じです。
+
+```text
+Workers & Pages → weddingphoto → Settings → Variables and Secrets → Production
+```
+
+ここに登録しないと、デプロイが成功してもアップロード時に環境変数を読み取れません。Workers Buildsの「Build Variables and secrets」に登録しただけでは、実行時Workerの環境変数にならない場合があります。
 
 ```text
 GOOGLE_CLIENT_ID        通常の変数
@@ -62,6 +68,17 @@ GOOGLE_DRIVE_FOLDER_ID  通常の変数
 ```
 
 Cloudflare WorkersのSecretsは暗号化された環境変数として実行時に参照できます。[Cloudflare公式ドキュメント](https://developers.cloudflare.com/workers/configuration/secrets/)
+
+CLIを使う場合は、プロジェクトのルートで以下を実行し、各コマンドの入力待ちに値を貼り付けます。
+
+```bash
+npx wrangler secret put GOOGLE_CLIENT_ID
+npx wrangler secret put GOOGLE_CLIENT_SECRET
+npx wrangler secret put GOOGLE_REFRESH_TOKEN
+npx wrangler secret put GOOGLE_DRIVE_FOLDER_ID
+```
+
+4つすべてをSecretとして登録しても動作します。登録後、再度アップロードするとログの`cloudflareEnv`が4項目とも`true`になります。
 
 ### 大きな動画について
 
